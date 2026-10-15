@@ -110,8 +110,10 @@ func main() {
 	server.Use(middleware.Language())
 	middleware.SetUpLogger(server)
 	// Initialize session store
+	// 自定义 session cookie 名：避免与同机部署的其它 one-api 实例
+	// （浏览器 cookie 按 host 匹配、不区分端口）互相覆盖登录态
 	store := cookie.NewStore([]byte(config.SessionSecret))
-	server.Use(sessions.Sessions("session", store))
+	server.Use(sessions.Sessions("one-api-future-session", store))
 
 	router.SetRouter(server, buildFS)
 	var port = os.Getenv("PORT")
