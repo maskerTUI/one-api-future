@@ -1,0 +1,16 @@
+.idea
+.vscode
+upload
+*.exe
+*.db
+build
+*.db-journal
+logs
+data
+node_modules
+cmd.md
+.env
+/one-api
+temp
+.DS_Store
+*.tar.gz
