@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Divider, Form, Grid, Header } from 'semantic-ui-react';
+import {
+  Button,
+  Divider,
+  Dropdown,
+  Form,
+  Grid,
+  Header,
+  Icon,
+  Input,
+  Label,
+  Table,
+} from 'semantic-ui-react';
 import {
   API,
   showError,
@@ -8,6 +19,50 @@ import {
   timestamp2string,
   verifyJSON,
 } from '../helpers';
+
+
+// ---- 模型别名表格编辑：解析 / 序列化 ----
+// 兼容三种形态：字符串（单后端）、数组（多后端默认轮询）、对象（多后端+策略）
+const ALIAS_STRATEGIES = ['round_robin', 'random', 'ip_hash', 'cookie_hash', 'primary_backup'];
+
+function parseAliasRows(value) {
+  if (!value || value.trim() === '') return [];
+  try {
+    const obj = JSON.parse(value);
+    return Object.entries(obj).map(([alias, v]) => {
+      if (Array.isArray(v)) {
+        return { alias, models: v, strategy: 'round_robin' };
+      }
+      if (v && typeof v === 'object') {
+        return {
+          alias,
+          models: Array.isArray(v.models) ? v.models : [],
+          strategy: v.strategy || 'round_robin',
+        };
+      }
+      return { alias, models: [String(v)], strategy: 'primary_backup' };
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+function serializeAliasRows(rows) {
+  const obj = {};
+  rows.forEach((row) => {
+    const alias = (row.alias || '').trim();
+    const models = (row.models || []).filter((mm) => mm && mm.trim() !== '');
+    if (alias === '' || models.length === 0) return;
+    if (models.length === 1) {
+      obj[alias] = models[0];
+    } else if (row.strategy === 'round_robin') {
+      obj[alias] = models;
+    } else {
+      obj[alias] = { models, strategy: row.strategy };
+    }
+  });
+  return JSON.stringify(obj, null, 2);
+}
 
 const OperationSetting = () => {
   const { t } = useTranslation();
@@ -27,6 +82,9 @@ const OperationSetting = () => {
     RetryTimes: 0,
   });
   const [originInputs, setOriginInputs] = useState({});
+  const [modelOptions, setModelOptions] = useState([]);
+  const [aliasRows, setAliasRows] = useState([]);
+  const [aliasSavedValue, setAliasSavedValue] = useState(null);
   let [loading, setLoading] = useState(false);
   let [historyTimestamp, setHistoryTimestamp] = useState(
     timestamp2string(now.getTime() / 1000 - 30 * 24 * 3600)
@@ -55,7 +113,30 @@ const OperationSetting = () => {
 
   useEffect(() => {
     getOptions().then();
+    API.get('/api/channel/models')
+      .then((res) => {
+        const list = res.data && res.data.data ? res.data.data : [];
+        setModelOptions(list.map((m) => ({ key: m.id, text: m.id, value: m.id })));
+      })
+      .catch(() => {});
   }, []);
+
+  // ModelAlias 配置被外部更新（如加载/保存成功）时，同步到表格行
+  useEffect(() => {
+    if (inputs.ModelAlias !== aliasSavedValue) {
+      setAliasRows(parseAliasRows(inputs.ModelAlias));
+      setAliasSavedValue(inputs.ModelAlias);
+    }
+  }, [inputs.ModelAlias]);
+
+  const saveAliasRows = async () => {
+    const json = serializeAliasRows(aliasRows);
+    setInputs((prev) => ({ ...prev, ModelAlias: json }));
+    await updateOption('ModelAlias', json === '{}' ? '' : json);
+    setOriginInputs((prev) => ({ ...prev, ModelAlias: json }));
+    setAliasRows(parseAliasRows(json));
+    setAliasSavedValue(json);
+  };
 
   const updateOption = async (key, value) => {
     setLoading(true);
@@ -144,32 +225,6 @@ const OperationSetting = () => {
           await updateOption('RetryTimes', inputs.RetryTimes);
         }
         break;
-      case 'alias':
-        if (originInputs['ModelAlias'] !== inputs.ModelAlias) {
-          if (inputs.ModelAlias.trim() === '') {
-            await updateOption('ModelAlias', '{}');
-          } else {
-            if (!verifyJSON(inputs.ModelAlias)) {
-              showError('模型别名不是合法的 JSON 字符串');
-              return;
-            }
-            await updateOption('ModelAlias', inputs.ModelAlias);
-          }
-        }
-        break;
-      case 'context':
-        if (originInputs['ModelContextTokens'] !== inputs.ModelContextTokens) {
-          if (inputs.ModelContextTokens.trim() === '') {
-            await updateOption('ModelContextTokens', '{}');
-          } else {
-            if (!verifyJSON(inputs.ModelContextTokens)) {
-              showError('模型上下文长度不是合法的 JSON 字符串');
-              return;
-            }
-            await updateOption('ModelContextTokens', inputs.ModelContextTokens);
-          }
-        }
-        break;
     }
   };
 
@@ -191,43 +246,99 @@ const OperationSetting = () => {
       <Grid.Column>
         <Form loading={loading}>
           <Header as='h3'>{t('setting.operation.alias.title')}</Header>
-          <Form.Group widths='equal'>
-            <Form.TextArea
-              label={t('setting.operation.alias.label')}
-              name='ModelAlias'
-              onChange={handleInputChange}
-              style={{ minHeight: 120, fontFamily: 'JetBrains Mono, Consolas' }}
-              autoComplete='new-password'
-              value={inputs.ModelAlias}
-              placeholder={t('setting.operation.alias.placeholder')}
-            />
-          </Form.Group>
-          <Form.Button
+          <Label basic style={{ marginBottom: '1em' }}>
+            {t('setting.operation.alias.hint')}
+          </Label>
+          <Table basic='very' size='small'>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell width={4}>{t('setting.operation.alias.col_alias')}</Table.HeaderCell>
+                <Table.HeaderCell width={7}>{t('setting.operation.alias.col_models')}</Table.HeaderCell>
+                <Table.HeaderCell width={3}>{t('setting.operation.alias.col_strategy')}</Table.HeaderCell>
+                <Table.HeaderCell width={2}></Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {aliasRows.map((row, idx) => (
+                <Table.Row key={idx}>
+                  <Table.Cell>
+                    <Input
+                      fluid
+                      value={row.alias}
+                      placeholder='my-model'
+                      onChange={(e, { value }) => {
+                        const rows = [...aliasRows];
+                        rows[idx] = { ...row, alias: value };
+                        setAliasRows(rows);
+                      }}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Dropdown
+                      fluid
+                      multiple
+                      search
+                      selection
+                      allowAdditions
+                      additionLabel='新增模型: '
+                      options={modelOptions}
+                      value={row.models}
+                      placeholder={t('setting.operation.alias.models_placeholder')}
+                      onChange={(e, { value }) => {
+                        const rows = [...aliasRows];
+                        rows[idx] = { ...row, models: value };
+                        setAliasRows(rows);
+                      }}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    {row.models.length > 1 ? (
+                      <Dropdown
+                        fluid
+                        selection
+                        options={ALIAS_STRATEGIES.map((st) => ({ key: st, text: st, value: st }))}
+                        value={row.strategy}
+                        onChange={(e, { value }) => {
+                          const rows = [...aliasRows];
+                          rows[idx] = { ...row, strategy: value };
+                          setAliasRows(rows);
+                        }}
+                      />
+                    ) : (
+                      <span style={{ color: '#999' }}>—</span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size='tiny'
+                      negative
+                      icon
+                      onClick={() => {
+                        setAliasRows(aliasRows.filter((_, i) => i !== idx));
+                      }}
+                    >
+                      <Icon name='trash' />
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+          <Button
+            size='tiny'
             onClick={() => {
-              submitConfig('alias').then();
+              setAliasRows([...aliasRows, { alias: '', models: [], strategy: 'round_robin' }]);
+            }}
+          >
+            <Icon name='plus' /> {t('setting.operation.alias.add_row')}
+          </Button>{' '}
+          <Form.Button
+            primary
+            onClick={() => {
+              saveAliasRows().then();
             }}
           >
             {t('setting.operation.alias.buttons.save')}
-          </Form.Button>
-          <Divider />
-          <Header as='h3'>{t('setting.operation.context.title')}</Header>
-          <Form.Group widths='equal'>
-            <Form.TextArea
-              label={t('setting.operation.context.label')}
-              name='ModelContextTokens'
-              onChange={handleInputChange}
-              style={{ minHeight: 100, fontFamily: 'JetBrains Mono, Consolas' }}
-              autoComplete='new-password'
-              value={inputs.ModelContextTokens}
-              placeholder={t('setting.operation.context.placeholder')}
-            />
-          </Form.Group>
-          <Form.Button
-            onClick={() => {
-              submitConfig('context').then();
-            }}
-          >
-            {t('setting.operation.context.buttons.save')}
           </Form.Button>
           <Divider />
           <Header as='h3'>{t('setting.operation.log.title')}</Header>

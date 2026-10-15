@@ -42,7 +42,7 @@ func estimatePromptTokens(c *gin.Context) int {
 // filterModelsByContext 过滤掉上下文长度小于当前会话（含 10% 安全余量）的模型。
 // 未在 ModelContextTokens 中配置的模型不参与过滤（视为不限）。
 func filterModelsByContext(models []string, estTokens int) []string {
-	ctxMap := model.GetModelContextTokens()
+	ctxMap := model.GetMergedContextTokens()
 	if len(ctxMap) == 0 || estTokens <= 0 {
 		return models
 	}

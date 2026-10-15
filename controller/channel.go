@@ -182,6 +182,7 @@ func UpdateChannel(c *gin.Context) {
 	// channel.Update() 内部会从 DB 重读整行覆盖结构体，
 	// 因此在调用前先保存请求期望的 support_responses 值
 	wantSupportResponses := channel.SupportResponses
+	wantModelContext := channel.ModelContext
 	err = channel.Update()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -201,6 +202,17 @@ func UpdateChannel(c *gin.Context) {
 			})
 			return
 		}
+	}
+	// model_context 允许写空值（清空配置），同样单独更新
+	if bytes.Contains(requestBody, []byte("\"model_context\"")) {
+		if err = model.DB.Model(channel).UpdateColumn("model_context", wantModelContext).Error; err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+		channel.ModelContext = wantModelContext
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

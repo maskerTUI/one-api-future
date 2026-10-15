@@ -42,6 +42,7 @@ type Channel struct {
 	AutoDisableTime    string  `json:"auto_disable_time" gorm:"type:varchar(8);default:''"` // 每日禁用时间 HH:MM
 	AutoEnableTime     string  `json:"auto_enable_time" gorm:"type:varchar(8);default:''"`  // 每日启用时间 HH:MM
 	SupportResponses   bool    `json:"support_responses" gorm:"default:false"`              // 是否支持 Responses API 透传
+	ModelContext       string  `json:"model_context" gorm:"type:text"`                      // 本渠道各模型的上下文长度 JSON：{"模型": tokens}
 }
 
 type ChannelConfig struct {

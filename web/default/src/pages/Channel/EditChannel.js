@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Button, Card, Form, Input, Message} from 'semantic-ui-react';
+import {Button, Card, Form, Input, Label, Message} from 'semantic-ui-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {API, copy, getChannelModels, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
 import {CHANNEL_OPTIONS} from '../../constants';
@@ -47,6 +47,7 @@ const EditChannel = () => {
     model_mapping: '',
     system_prompt: '',
     support_responses: false,
+    model_context: '{}',
     models: [],
     groups: ['default'],
   };
@@ -66,6 +67,31 @@ const EditChannel = () => {
     vertex_ai_project_id: '',
     vertex_ai_adc: '',
   });
+
+  const parseModelContext = (jsonStr) => {
+    try {
+      return JSON.parse(jsonStr || '{}') || {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  const modelContextMap = parseModelContext(inputs.model_context);
+
+  const handleContextChange = (modelName, value) => {
+    const next = { ...modelContextMap };
+    const v = (value || '').trim();
+    if (v === '') {
+      delete next[modelName];
+    } else {
+      next[modelName] = parseInt(v, 10) || 0;
+    }
+    setInputs((inputs) => ({
+      ...inputs,
+      model_context: JSON.stringify(Object.keys(next).length ? next : '{}'),
+    }));
+  };
+
   const handleInputChange = (e, { name, value }) => {
     setInputs((inputs) => ({ ...inputs, [name]: value }));
     if (name === 'type') {
@@ -102,6 +128,7 @@ const EditChannel = () => {
           2
         );
       }
+      data.model_context = data.model_context || '{}';
       setInputs(data);
       if (data.config !== '') {
         setConfig(JSON.parse(data.config));
@@ -207,6 +234,16 @@ const EditChannel = () => {
     }
     let res;
     localInputs.models = localInputs.models.join(',');
+    {
+      // 清理 model_context：只保留仍在本渠道模型列表里的条目
+      const ctx = parseModelContext(localInputs.model_context);
+      const cleaned = {};
+      localInputs.models.split(',').forEach((m) => {
+        const t = ctx[m];
+        if (t && t > 0) cleaned[m] = t;
+      });
+      localInputs.model_context = JSON.stringify(Object.keys(cleaned).length ? cleaned : '{}');
+    }
     localInputs.group = localInputs.groups.join(',');
     localInputs.config = JSON.stringify(config);
     if (isEdit) {
@@ -434,6 +471,39 @@ const EditChannel = () => {
                   autoComplete='new-password'
                   options={modelOptions}
                 />
+              </Form.Field>
+            )}
+            {inputs.type !== 43 && inputs.models.length > 0 && (
+              <Form.Field>
+                <label>{t('channel.edit.model_context')}</label>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {inputs.models.map((m) => (
+                    <div key={m}>
+                      <Label basic pointing='below'>
+                        {m}
+                      </Label>
+                      <Input
+                        size='small'
+                        type='number'
+                        min='0'
+                        placeholder={t('channel.edit.model_context_placeholder')}
+                        value={modelContextMap[m] || ''}
+                        onChange={(e, { value }) => handleContextChange(m, value)}
+                        style={{ width: '160px' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <Label basic>
+                  {t('channel.edit.model_context_hint')}
+                </Label>
               </Form.Field>
             )}
             {inputs.type !== 43 && (

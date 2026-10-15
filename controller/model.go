@@ -12,6 +12,7 @@ import (
 	"github.com/songquanpeng/one-api/relay/meta"
 	relaymodel "github.com/songquanpeng/one-api/relay/model"
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -227,4 +228,75 @@ func GetUserAvailableModels(c *gin.Context) {
 		"data":    models,
 	})
 	return
+}
+
+// GetModelsStatus 返回全部模型的可用状态与响应时间（主页总览用）。
+// available = 该模型存在启用渠道；响应时间取启用渠道最近测试耗时的平均值。
+func GetModelsStatus(c *gin.Context) {
+	var channels []model.Channel
+	if err := model.DB.Find(&channels).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	type agg struct {
+		enabled   int
+		disabled  int
+		rtSum     int
+		rtCount   int
+		modelName string
+	}
+	m := make(map[string]*agg)
+	var names []string
+	for _, ch := range channels {
+		for _, name := range strings.Split(ch.Models, ",") {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			a := m[name]
+			if a == nil {
+				a = &agg{}
+				m[name] = a
+				names = append(names, name)
+			}
+			if ch.Status == model.ChannelStatusEnabled {
+				a.enabled++
+				if ch.ResponseTime > 0 {
+					a.rtSum += ch.ResponseTime
+					a.rtCount++
+				}
+			} else {
+				a.disabled++
+			}
+		}
+	}
+	sort.Strings(names)
+	type ModelStatus struct {
+		Model        string `json:"model"`
+		Available    bool   `json:"available"`
+		ResponseTime int    `json:"response_time"`
+		Channels     int    `json:"channels"`
+	}
+	out := make([]ModelStatus, 0, len(names))
+	for _, name := range names {
+		a := m[name]
+		rt := 0
+		if a.rtCount > 0 {
+			rt = a.rtSum / a.rtCount
+		}
+		out = append(out, ModelStatus{
+			Model:        name,
+			Available:    a.enabled > 0,
+			ResponseTime: rt,
+			Channels:     a.enabled,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    out,
+	})
 }

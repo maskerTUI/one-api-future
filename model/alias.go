@@ -162,3 +162,32 @@ func GetModelContextTokens() map[string]int {
 	}
 	return m
 }
+
+// GetMergedContextTokens 合并全局配置与各渠道级 model_context 配置的模型上下文长度表。
+// 同一模型多处配置时取最大值（保守：按更大的上下文判断）。
+func GetMergedContextTokens() map[string]int {
+	merged := GetModelContextTokens()
+	var channels []Channel
+	if DB != nil {
+		if err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error; err == nil {
+			for _, ch := range channels {
+				if ch.ModelContext == "" {
+					continue
+				}
+				var cm map[string]int
+				if err := json.Unmarshal([]byte(ch.ModelContext), &cm); err != nil {
+					continue
+				}
+				for m, v := range cm {
+					if v <= 0 {
+						continue
+					}
+					if old, ok := merged[m]; !ok || v > old {
+						merged[m] = v
+					}
+				}
+			}
+		}
+	}
+	return merged
+}
