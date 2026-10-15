@@ -113,10 +113,10 @@ const OperationSetting = () => {
 
   useEffect(() => {
     getOptions().then();
-    API.get('/api/channel/models')
+    API.get('/api/models/configured')
       .then((res) => {
-        const list = res.data && res.data.data ? res.data.data : [];
-        setModelOptions(list.map((m) => ({ key: m.id, text: m.id, value: m.id })));
+        const list = res.data && res.data.success ? res.data.data : [];
+        setModelOptions(list.map((m) => ({ key: m, text: m, value: m })));
       })
       .catch(() => {});
   }, []);

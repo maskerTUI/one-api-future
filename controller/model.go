@@ -300,3 +300,21 @@ func GetModelsStatus(c *gin.Context) {
 		"data":    out,
 	})
 }
+
+// GetConfiguredModels 返回所有渠道实际配置的模型名（abilities 去重），用于别名等配置的下拉选项
+func GetConfiguredModels(c *gin.Context) {
+	var modelsList []string
+	if err := model.DB.Model(&model.Ability{}).Distinct().Pluck("model", &modelsList).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	sort.Strings(modelsList)
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    modelsList,
+	})
+}
