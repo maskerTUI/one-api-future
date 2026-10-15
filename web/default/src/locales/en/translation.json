@@ -699,10 +699,18 @@
       },
       "alias": {
         "title": "Model Alias / Unified Model Name",
-        "label": "Alias mapping (JSON: {\"unified model name\": \"actual backend model\"})",
-        "placeholder": "{\n  \"claude-work\": \"claude-sonnet-4-20250514\",\n  \"company-gpt\": \"gpt-4o\"\n}",
+        "label": "Alias mapping (JSON, supports one-to-many load balancing)",
+        "placeholder": "{\n  \"company-gpt\": \"gpt-4o\",\n  \"team-model\": [\"backend-a\", \"backend-b\"],\n  \"team-ha\": {\"models\": [\"primary\", \"backup\"], \"strategy\": \"primary_backup\"}\n}\n\nStrategies: round_robin / random / ip_hash / cookie_hash / primary_backup\nArray form defaults to round_robin; disabled channels are never routed to",
         "buttons": {
           "save": "Save Alias Settings"
+        }
+      },
+      "context": {
+        "title": "Model Context Length",
+        "label": "Model context length map (JSON: {\"model\": tokens})",
+        "placeholder": "{\n  \"backend-a\": 128000,\n  \"backend-b\": 200000\n}\n\nDuring alias load balancing, models whose context is smaller than the current session are excluded automatically",
+        "buttons": {
+          "save": "Save Context Length Settings"
         }
       }
     },

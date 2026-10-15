@@ -22,4 +22,5 @@ const (
 	KeyRequestBody    = "key_request_body"
 	SystemPrompt      = "system_prompt"
 	SupportResponses  = "support_responses"
+	AliasOverride     = "alias_override"
 )

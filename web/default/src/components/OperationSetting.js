@@ -14,6 +14,7 @@ const OperationSetting = () => {
   let now = new Date();
   let [inputs, setInputs] = useState({
     ModelAlias: '',
+    ModelContextTokens: '',
     ChatLink: '',
     QuotaPerUnit: 0,
     AutomaticDisableChannelEnabled: '',
@@ -37,7 +38,7 @@ const OperationSetting = () => {
     if (success) {
       let newInputs = {};
       data.forEach((item) => {
-        if (item.key === 'ModelAlias') {
+        if (item.key === 'ModelAlias' || item.key === 'ModelContextTokens') {
           item.value = JSON.stringify(JSON.parse(item.value), null, 2);
         }
         if (item.value === '{}') {
@@ -156,6 +157,19 @@ const OperationSetting = () => {
           }
         }
         break;
+      case 'context':
+        if (originInputs['ModelContextTokens'] !== inputs.ModelContextTokens) {
+          if (inputs.ModelContextTokens.trim() === '') {
+            await updateOption('ModelContextTokens', '{}');
+          } else {
+            if (!verifyJSON(inputs.ModelContextTokens)) {
+              showError('模型上下文长度不是合法的 JSON 字符串');
+              return;
+            }
+            await updateOption('ModelContextTokens', inputs.ModelContextTokens);
+          }
+        }
+        break;
     }
   };
 
@@ -194,6 +208,26 @@ const OperationSetting = () => {
             }}
           >
             {t('setting.operation.alias.buttons.save')}
+          </Form.Button>
+          <Divider />
+          <Header as='h3'>{t('setting.operation.context.title')}</Header>
+          <Form.Group widths='equal'>
+            <Form.TextArea
+              label={t('setting.operation.context.label')}
+              name='ModelContextTokens'
+              onChange={handleInputChange}
+              style={{ minHeight: 100, fontFamily: 'JetBrains Mono, Consolas' }}
+              autoComplete='new-password'
+              value={inputs.ModelContextTokens}
+              placeholder={t('setting.operation.context.placeholder')}
+            />
+          </Form.Group>
+          <Form.Button
+            onClick={() => {
+              submitConfig('context').then();
+            }}
+          >
+            {t('setting.operation.context.buttons.save')}
           </Form.Button>
           <Divider />
           <Header as='h3'>{t('setting.operation.log.title')}</Header>

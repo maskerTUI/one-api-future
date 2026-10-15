@@ -69,6 +69,7 @@ func InitOptionMap() {
 	config.OptionMap["PreConsumedQuota"] = strconv.FormatInt(config.PreConsumedQuota, 10)
 	config.OptionMap["ModelRatio"] = billingratio.ModelRatio2JSONString()
 	config.OptionMap["ModelAlias"] = "{}"
+	config.OptionMap["ModelContextTokens"] = "{}"
 	config.OptionMap["GroupRatio"] = billingratio.GroupRatio2JSONString()
 	config.OptionMap["CompletionRatio"] = billingratio.CompletionRatio2JSONString()
 	config.OptionMap["TopUpLink"] = config.TopUpLink
@@ -228,6 +229,8 @@ func updateOptionMap(key string, value string) (err error) {
 		err = billingratio.UpdateModelRatioByJSONString(value)
 	case "ModelAlias":
 		err = UpdateModelAliasByJSONString(value)
+	case "ModelContextTokens":
+		err = UpdateModelContextTokensByJSONString(value)
 	case "GroupRatio":
 		err = billingratio.UpdateGroupRatioByJSONString(value)
 	case "CompletionRatio":
