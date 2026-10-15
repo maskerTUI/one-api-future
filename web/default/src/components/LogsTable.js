@@ -98,10 +98,9 @@ function getColorByElapsedTime(elapsedTime) {
 }
 
 function renderDetail(log) {
+  // 内部自用部署：不再显示日志详情内容，仅保留耗时等状态标签
   return (
     <>
-      {log.content}
-      <br />
       {log.elapsed_time && (
         <Label
           basic

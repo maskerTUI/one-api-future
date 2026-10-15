@@ -41,6 +41,8 @@ const (
 )
 
 func recordLogHelper(ctx context.Context, log *Log) {
+	// 内部自用部署：操作日志不再记录详情内容（content 一律置空）
+	log.Content = ""
 	requestId := helper.GetRequestID(ctx)
 	log.RequestId = requestId
 	err := LOG_DB.Create(log).Error
