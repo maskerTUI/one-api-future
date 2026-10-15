@@ -54,6 +54,7 @@ _✨ An internal-use, customized fork of [songquanpeng/one-api](https://github.c
 Linux amd64 static binary (musl statically linked, zero dependencies):
 
 ```bash
+mkdir -p /opt/one-api && wget https://github.com/maskerTUI/one-api-future/releases/latest/download/one-api-deploy.tar.gz
 mkdir -p /opt/one-api && tar xzf one-api-deploy.tar.gz -C /opt/one-api && cd /opt/one-api
 chmod +x install.sh start.sh
 sudo ./install.sh

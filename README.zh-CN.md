@@ -54,6 +54,7 @@ _✨ 基于 [songquanpeng/one-api](https://github.com/songquanpeng/one-api) 二�
 Linux amd64 静态二进制（musl 静态链接，无任何依赖）：
 
 ```bash
+mkdir -p /opt/one-api && wget https://github.com/maskerTUI/one-api-future/releases/latest/download/one-api-deploy.tar.gz
 mkdir -p /opt/one-api && tar xzf one-api-deploy.tar.gz -C /opt/one-api && cd /opt/one-api
 chmod +x install.sh start.sh
 sudo ./install.sh
