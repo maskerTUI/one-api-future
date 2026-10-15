@@ -807,7 +807,7 @@ func AdminTopUp(c *gin.Context) {
 	if req.Remark == "" {
 		req.Remark = fmt.Sprintf("通过 API 充值 %s", common.LogQuota(int64(req.Quota)))
 	}
-	model.RecordTopupLog(ctx, req.UserId, req.Remark, req.Quota)
+	model.RecordTopupLog(ctx, req.UserId, req.Remark, int64(req.Quota))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

@@ -145,7 +145,7 @@ func postConsumeResponsesQuota(ctx context.Context, meta *meta.Meta, modelName s
 		CompletionTokens: int(completionTokens),
 		ModelName:        modelName,
 		TokenName:        meta.TokenName,
-		Quota:            int(quota),
+		Quota:            quota,
 		Content:          logContent,
 		IsStream:         isStream,
 		ElapsedTime:      helper.CalcElapsedTime(startTime),

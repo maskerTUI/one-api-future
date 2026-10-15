@@ -1,6 +1,8 @@
 package model
 
 import (
+	"math"
+
 	"context"
 	"errors"
 	"fmt"
@@ -31,6 +33,9 @@ const (
 
 // User if you add sensitive fields, don't forget to clean them in setupLogin function.
 // Otherwise, the sensitive information will be saved on local storage in plain text!
+// DefaultUserQuota 内部自用部署下新用户的默认额度（int64 最大值的 1/4，防运算溢出）
+const DefaultUserQuota int64 = math.MaxInt64 / 4
+
 type User struct {
 	Id               int    `json:"id"`
 	Username         string `json:"username" gorm:"unique;index" validate:"max=12"`
@@ -125,7 +130,8 @@ func (user *User) Insert(ctx context.Context, inviterId int) error {
 			return err
 		}
 	}
-	user.Quota = config.QuotaForNewUser
+	// 内部自用部署：新用户额度默认直接给到最大值（约 2.3e18，百亿千亿量级完全够用）
+	user.Quota = DefaultUserQuota
 	user.AccessToken = random.GetUUID()
 	user.AffCode = random.GetRandomString(4)
 	result := DB.Create(user)

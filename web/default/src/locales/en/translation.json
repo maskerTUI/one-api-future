@@ -264,9 +264,9 @@
   },
   "common": {
     "quota": {
-      "display": "Equivalent: ${{amount}}",
-      "display_short": "${{amount}}",
-      "unit": "$"
+      "display": "Equivalent: ¥{{amount}}",
+      "display_short": "¥{{amount}}",
+      "unit": "¥"
     }
   },
   "redemption": {

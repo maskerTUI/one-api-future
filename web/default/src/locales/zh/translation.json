@@ -264,9 +264,9 @@
   },
   "common": {
     "quota": {
-      "display": "等价金额：${{amount}}",
-      "display_short": "${{amount}}",
-      "unit": "$"
+      "display": "等价金额：¥{{amount}}",
+      "display_short": "¥{{amount}}",
+      "unit": "¥"
     }
   },
   "redemption": {

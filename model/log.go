@@ -21,7 +21,7 @@ type Log struct {
 	Username          string `json:"username" gorm:"index:index_username_model_name,priority:2;default:''"`
 	TokenName         string `json:"token_name" gorm:"index;default:''"`
 	ModelName         string `json:"model_name" gorm:"index;index:index_username_model_name,priority:1;default:''"`
-	Quota             int    `json:"quota" gorm:"default:0"`
+	Quota             int64  `json:"quota" gorm:"bigint;default:0"`
 	PromptTokens      int    `json:"prompt_tokens" gorm:"default:0"`
 	CompletionTokens  int    `json:"completion_tokens" gorm:"default:0"`
 	ChannelId         int    `json:"channel" gorm:"index"`
@@ -65,7 +65,7 @@ func RecordLog(ctx context.Context, userId int, logType int, content string) {
 	recordLogHelper(ctx, log)
 }
 
-func RecordTopupLog(ctx context.Context, userId int, content string, quota int) {
+func RecordTopupLog(ctx context.Context, userId int, content string, quota int64) {
 	log := &Log{
 		UserId:    userId,
 		Username:  GetUsernameById(userId),
@@ -217,7 +217,7 @@ type LogStatistic struct {
 	Day              string `gorm:"column:day"`
 	ModelName        string `gorm:"column:model_name"`
 	RequestCount     int    `gorm:"column:request_count"`
-	Quota            int    `gorm:"column:quota"`
+	Quota            int64  `gorm:"column:quota"`
 	PromptTokens     int    `gorm:"column:prompt_tokens"`
 	CompletionTokens int    `gorm:"column:completion_tokens"`
 }

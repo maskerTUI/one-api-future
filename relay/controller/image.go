@@ -218,7 +218,7 @@ func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 				CompletionTokens: 0,
 				ModelName:        imageRequest.Model,
 				TokenName:        tokenName,
-				Quota:            int(quota),
+				Quota:            quota,
 				Content:          logContent,
 			})
 			model.UpdateUserUsedQuotaAndRequestCount(meta.UserId, quota)

@@ -40,7 +40,7 @@ func PostConsumeQuota(ctx context.Context, tokenId int, quotaDelta int64, totalQ
 			CompletionTokens: 0,
 			ModelName:        modelName,
 			TokenName:        tokenName,
-			Quota:            int(totalQuota),
+			Quota:            int64(totalQuota),
 			Content:          logContent,
 		})
 		model.UpdateUserUsedQuotaAndRequestCount(userId, totalQuota)

@@ -50,32 +50,12 @@ export function renderNumber(num) {
 }
 
 export function renderQuota(quota, t, precision = 2) {
-  const displayInCurrency =
-    localStorage.getItem('display_in_currency') === 'true';
-  const quotaPerUnit = parseFloat(
-    localStorage.getItem('quota_per_unit') || '1'
-  );
-
-  if (displayInCurrency) {
-    const amount = (quota / quotaPerUnit).toFixed(precision);
-    return t('common.quota.display_short', { amount });
-  }
-
-  return renderNumber(quota);
+  // 内部自用部署：额度一律直接显示 token 数（千分位），不做金额换算
+  return Number(quota).toLocaleString('en-US');
 }
 
 export function renderQuotaWithPrompt(quota, t) {
-  const displayInCurrency =
-    localStorage.getItem('display_in_currency') === 'true';
-  const quotaPerUnit = parseFloat(
-    localStorage.getItem('quota_per_unit') || '1'
-  );
-
-  if (displayInCurrency) {
-    const amount = (quota / quotaPerUnit).toFixed(2);
-    return ` (${t('common.quota.display', { amount })})`;
-  }
-
+  // 额度直接用 token 量表示，不再附加"等价金额"提示
   return '';
 }
 
